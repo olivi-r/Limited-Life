@@ -2,7 +2,7 @@ name: LimitedLife
 main: com.limited_life.Main
 version: 1.0
 api-version: 1.21.4
-author: Olivia, Dylan
+authors: [Olivia, Dylan]
 commands:
   set-lives:
     description: Manually set amount of lives for a player
