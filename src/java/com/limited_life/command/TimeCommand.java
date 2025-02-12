@@ -26,8 +26,7 @@ public class TimeCommand implements CommandExecutor, TabCompleter {
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if (sender instanceof Player) {
-			Integer time = plugin.getTime((Player) sender);
-			time = time == null ? 0 : time;
+			int time = plugin.getTime((Player) sender);
 			int seconds = time % 60;
 			time /= 60;
 			int minutes = time % 60;
