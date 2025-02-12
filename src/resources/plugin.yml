@@ -4,10 +4,21 @@ version: 1.0
 api-version: 1.21.4
 authors: [Olivia, Dylan]
 commands:
-  set-lives:
-    description: Manually set amount of lives for a player
-    usage: /<command> <player> <lives>
+  freeze:
+    description: Stop time progression
+    usage: /<command>
     permission: op
-  lives:
-    description: See how many lives you have left
+  settime:
+    description: Manually set amount of time for a player
+    usage: /<command> <player> <seconds>
+    permission: op
+  unfreeze:
+    description: Start time progression
+    usage: /<command>
+    permission: op
+  giveminutes:
+    description: Give some of your time left to someone else
+    usage: /<command>
+  time:
+    description: See how long you have left
     usage: /<command>
