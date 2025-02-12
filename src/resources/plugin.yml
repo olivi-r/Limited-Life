@@ -18,7 +18,7 @@ commands:
     permission: op
   giveminutes:
     description: Give some of your time left to someone else
-    usage: /<command>
+    usage: /<command> <player> <minutes>
   time:
     description: See how long you have left
     usage: /<command>
