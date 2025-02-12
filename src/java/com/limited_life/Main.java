@@ -9,6 +9,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.limited_life.command.GiveMinutesCommand;
 import com.limited_life.command.TimeCommand;
 
 public class Main extends JavaPlugin implements Listener {
@@ -24,6 +25,11 @@ public class Main extends JavaPlugin implements Listener {
 
 		TimeCommand timeCommand = new TimeCommand(this);
 		getCommand("time").setExecutor(timeCommand);
+		getCommand("time").setTabCompleter(timeCommand);
+
+		GiveMinutesCommand giveMinutesCommand = new GiveMinutesCommand(this);
+		getCommand("giveminutes").setExecutor(giveMinutesCommand);
+		getCommand("giveminutes").setTabCompleter(giveMinutesCommand);
 	}
 
 	@EventHandler
