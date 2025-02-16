@@ -1,5 +1,6 @@
 package com.limited_life;
 
+import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -9,12 +10,15 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.limited_life.command.FreezeCommand;
 import com.limited_life.command.GiveMinutesCommand;
 import com.limited_life.command.TimeCommand;
+import com.limited_life.command.UnfreezeCommand;
 
 public class Main extends JavaPlugin implements Listener {
 	NamespacedKey timeKey;
 	NamespacedKey killProtectionKey;
+	Thread timerThread;
 
 	@Override
 	public void onEnable() {
@@ -30,6 +34,14 @@ public class Main extends JavaPlugin implements Listener {
 		GiveMinutesCommand giveMinutesCommand = new GiveMinutesCommand(this);
 		getCommand("giveminutes").setExecutor(giveMinutesCommand);
 		getCommand("giveminutes").setTabCompleter(giveMinutesCommand);
+
+		FreezeCommand freezeCommand = new FreezeCommand(this);
+		getCommand("freeze").setExecutor(freezeCommand);
+		getCommand("freeze").setTabCompleter(freezeCommand);
+
+		UnfreezeCommand unfreezeCommand = new UnfreezeCommand(this);
+		getCommand("unfreeze").setExecutor(unfreezeCommand);
+		getCommand("unfreeze").setTabCompleter(unfreezeCommand);
 	}
 
 	@EventHandler
@@ -57,7 +69,7 @@ public class Main extends JavaPlugin implements Listener {
 	}
 
 	public void setTime(Player player, int value) {
-		player.getPersistentDataContainer().set(timeKey, PersistentDataType.INTEGER, value);
+		player.getPersistentDataContainer().set(timeKey, PersistentDataType.INTEGER, Integer.max(0, value));
 	}
 
 	public int getLastDeath(Player player) {
@@ -65,7 +77,29 @@ public class Main extends JavaPlugin implements Listener {
 	}
 
 	public void setLastDeath(Player player, int value) {
-		player.getPersistentDataContainer().set(killProtectionKey, PersistentDataType.INTEGER, value);
+		player.getPersistentDataContainer().set(killProtectionKey, PersistentDataType.INTEGER, Integer.max(0, value));
+	}
+
+	public void unfreeze() {
+		freeze();
+		timerThread = new Thread(new Runnable() {
+			public void run() {
+				try {
+					while (true) {
+						Thread.sleep(1000);
+						Bukkit.getOnlinePlayers().forEach(player -> setTime(player, getTime(player) - 1));
+					}
+				} catch (InterruptedException err) {
+					Thread.currentThread().interrupt();
+				}
+			}
+		});
+		timerThread.start();
+	}
+
+	public void freeze() {
+		if (timerThread != null)
+			timerThread.interrupt();
 	}
 
 }
