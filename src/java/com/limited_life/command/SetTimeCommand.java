@@ -47,8 +47,10 @@ public class SetTimeCommand implements CommandExecutor, TabCompleter {
 			return true;
 		}
 
+		plugin.freeze();
 		plugin.setTime(player, time);
 		plugin.refresh(player);
+		plugin.unfreeze();
 		return true;
 	}
 
