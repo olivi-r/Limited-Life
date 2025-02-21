@@ -56,12 +56,15 @@ public class GiveMinutesCommand implements CommandExecutor, TabCompleter {
 		}
 
 //		give sender's time to reveiver
+		boolean frozen = plugin.isFrozen();
 		plugin.freeze();
 		plugin.setTime(player, time);
 		plugin.setTime(receiver, plugin.getTime(receiver) + 60 * given);
 		plugin.refresh(player);
 		plugin.refresh(receiver);
-		plugin.unfreeze();
+		if (!frozen)
+			plugin.unfreeze();
+
 		return true;
 	}
 

@@ -33,6 +33,7 @@ public class Main extends JavaPlugin implements Listener {
 	static int yellowTime = 43200; // 12hrs
 	static int redTime = 21600; // 6hrs
 	static int killProtectionTime = 300; // 5mins
+	boolean frozen;
 
 	@Override
 	public void onEnable() {
@@ -93,6 +94,8 @@ public class Main extends JavaPlugin implements Listener {
 			blackTeam = board.registerNewTeam("black");
 			blackTeam.setColor(ChatColor.BLACK);
 		}
+
+		frozen = true;
 	}
 
 	@EventHandler
@@ -113,8 +116,8 @@ public class Main extends JavaPlugin implements Listener {
 		if (!player.hasPlayedBefore()) {
 			setTime(player, 86400);
 			setLastDeath(player, killProtectionTime);
-			refresh(player);
 		}
+		refresh(player);
 	}
 
 	public int getTime(Player player) {
@@ -152,11 +155,18 @@ public class Main extends JavaPlugin implements Listener {
 			}
 		});
 		timerThread.start();
+		frozen = false;
 	}
 
 	public void freeze() {
 		if (timerThread != null)
 			timerThread.interrupt();
+
+		frozen = true;
+	}
+
+	public boolean isFrozen() {
+		return frozen;
 	}
 
 	public void refresh(Player player) {
