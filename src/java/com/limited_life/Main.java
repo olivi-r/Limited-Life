@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -21,11 +22,12 @@ import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
 import com.limited_life.command.FreezeCommand;
-import com.limited_life.command.GiveMinutesCommand;
+import com.limited_life.command.GiveTimeCommand;
 import com.limited_life.command.SetTimeCommand;
-import com.limited_life.command.TimeCommand;
 import com.limited_life.command.UnfreezeCommand;
 
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.querz.nbt.io.NBTUtil;
 import net.querz.nbt.io.NamedTag;
 import net.querz.nbt.tag.CompoundTag;
@@ -33,33 +35,30 @@ import net.querz.nbt.tag.IntTag;
 
 public class Main extends JavaPlugin implements Listener {
 	NamespacedKey timeKey;
-	NamespacedKey killProtectionKey;
 	Thread timerThread;
 	Team darkGreenTeam;
 	Team greenTeam;
 	Team yellowTeam;
 	Team redTeam;
 	Team blackTeam;
-	static int greenTime = 64800; // 18hrs
-	static int yellowTime = 43200; // 12hrs
-	static int redTime = 21600; // 6hrs
-	static int killProtectionTime = 300; // 5mins
+	static int startTime = 86400; // 24h
+	static int greenTime = 64800; // 18h
+	static int yellowTime = 43200; // 12h
+	static int redTime = 21600; // 6h
+	static int killProtectionTime = 30; // 30s
 	boolean frozen;
 
 	@Override
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(this, this);
 
+		// player timer
 		timeKey = new NamespacedKey(this, "time");
-		killProtectionKey = new NamespacedKey(this, "killProtection");
 
-		TimeCommand timeCommand = new TimeCommand(this);
-		getCommand("time").setExecutor(timeCommand);
-		getCommand("time").setTabCompleter(timeCommand);
-
-		GiveMinutesCommand giveMinutesCommand = new GiveMinutesCommand(this);
-		getCommand("giveminutes").setExecutor(giveMinutesCommand);
-		getCommand("giveminutes").setTabCompleter(giveMinutesCommand);
+		// setup commands
+		GiveTimeCommand giveMinutesCommand = new GiveTimeCommand(this);
+		getCommand("givetime").setExecutor(giveMinutesCommand);
+		getCommand("givetime").setTabCompleter(giveMinutesCommand);
 
 		FreezeCommand freezeCommand = new FreezeCommand(this);
 		getCommand("freeze").setExecutor(freezeCommand);
@@ -73,6 +72,7 @@ public class Main extends JavaPlugin implements Listener {
 		getCommand("settime").setExecutor(setTimeCommand);
 		getCommand("settime").setTabCompleter(setTimeCommand);
 
+		// setup teams
 		ScoreboardManager manager = Bukkit.getScoreboardManager();
 		Scoreboard board = manager.getMainScoreboard();
 		darkGreenTeam = board.getTeam("darkGreen");
@@ -106,18 +106,28 @@ public class Main extends JavaPlugin implements Listener {
 			blackTeam.setColor(ChatColor.BLACK);
 		}
 
+		new Thread(new Runnable() {
+			public void run() {
+				try {
+					while (true) {
+						for (Player player : Bukkit.getOnlinePlayers()) {
+							refresh(player);
+						}
+						Thread.sleep(10);
+					}
+				} catch (InterruptedException err) {
+					Thread.currentThread().interrupt();
+				}
+			}
+		}).start();
 		frozen = true;
 	}
 
 	@EventHandler
 	public void onPlayerDeath(PlayerDeathEvent event) {
 		Player player = event.getEntity();
-		if (getKillProtection(player) == 0) {
-//			take hour of total time and set spawn kill protection to 5mins
-			setTime(player, getTime(player) - 3600);
-			setKillProtection(player, killProtectionTime);
-			refresh(player);
-		}
+//		take hour of total time
+		setTime(player, getTime(player) - 3600);
 	}
 
 	@EventHandler
@@ -126,25 +136,30 @@ public class Main extends JavaPlugin implements Listener {
 		Player player = event.getPlayer();
 		if (!player.hasPlayedBefore()) {
 			setTime(player, 86400);
-			setKillProtection(player, killProtectionTime);
 		}
-		refresh(player);
 	}
 
 	public int getTime(Player player) {
-		return Integer.max(0, player.getPersistentDataContainer().get(timeKey, PersistentDataType.INTEGER));
+		Integer time = player.getPersistentDataContainer().get(timeKey, PersistentDataType.INTEGER);
+		if (time == null) {
+			setTime(player, startTime);
+			return startTime;
+		}
+
+		return Integer.max(0, time);
 	}
 
 	public void setTime(Player player, int value) {
 		player.getPersistentDataContainer().set(timeKey, PersistentDataType.INTEGER, Integer.max(0, value));
 	}
 
-	public int getKillProtection(Player player) {
-		return Integer.max(0, player.getPersistentDataContainer().get(killProtectionKey, PersistentDataType.INTEGER));
-	}
-
-	public void setKillProtection(Player player, int value) {
-		player.getPersistentDataContainer().set(killProtectionKey, PersistentDataType.INTEGER, Integer.max(0, value));
+	public String formatTime(int time) {
+		time = Integer.max(0, time);
+		int seconds = time % 60;
+		time /= 60;
+		int minutes = time % 60;
+		time /= 60;
+		return String.format("%02d:%02d:%02d", time, minutes, seconds);
 	}
 
 	public void unfreeze() {
@@ -156,16 +171,12 @@ public class Main extends JavaPlugin implements Listener {
 					while (true) {
 						try {
 							Thread.sleep(1000);
-							OfflinePlayer[] players = Bukkit.getOfflinePlayers();
-							for (int i = 0; i < players.length; i++) {
-								OfflinePlayer offlinePlayer = players[i];
+							for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
 								Player onlinePlayer = offlinePlayer.getPlayer();
 								if (onlinePlayer != null) {
 									setTime(onlinePlayer, getTime(onlinePlayer) - 1);
-									setKillProtection(onlinePlayer, getKillProtection(onlinePlayer) - 1);
-									refresh(onlinePlayer);
 								} else {
-									// OfflinePlayer doesnt load PersistantDataContainer
+									// OfflinePlayer doesn't load PersistantDataContainer
 									// need write directly to <player uuid>.dat nbt file
 									UUID id = offlinePlayer.getUniqueId();
 									File playerDataFile = playerdata.resolve(String.join("", id.toString(), ".dat"))
@@ -174,11 +185,9 @@ public class Main extends JavaPlugin implements Listener {
 									CompoundTag bukkitValues = ((CompoundTag) nbtData.getTag())
 											.getCompoundTag("BukkitValues");
 									IntTag timeTag = bukkitValues.getIntTag(timeKey.toString());
-									IntTag killProtectionTag = bukkitValues.getIntTag(killProtectionKey.toString());
 
 									// Offline players lose time twice as fast
 									timeTag.setValue(Integer.max(0, timeTag.asInt() - 2));
-									killProtectionTag.setValue(Integer.max(0, killProtectionTag.asInt() - 1));
 									NBTUtil.write(nbtData, playerDataFile);
 								}
 							}
@@ -206,8 +215,13 @@ public class Main extends JavaPlugin implements Listener {
 		return frozen;
 	}
 
-	public void refresh(Player player) {
+	void refresh(Player player) {
+		if (player == null)
+			return;
+
 		int time = getTime(player);
+		player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(formatTime(time)));
+
 		String name = player.getName();
 		if (time > greenTime)
 			darkGreenTeam.addEntry(name);
@@ -217,8 +231,12 @@ public class Main extends JavaPlugin implements Listener {
 			yellowTeam.addEntry(name);
 		else if (time > 0)
 			redTeam.addEntry(name);
-		else
+		else {
 			blackTeam.addEntry(name);
+			Bukkit.getScheduler().runTask(this, () -> {
+				player.setGameMode(GameMode.SPECTATOR);
+			});
+		}
 	}
 
 }

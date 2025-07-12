@@ -1,24 +1,22 @@
 name: LimitedLife
 main: com.limited_life.Main
 version: 1.0
-api-version: 1.21.4
+api-version: 1.21.8
 authors: [Olivia, Dylan]
 commands:
   freeze:
-    description: Stop time progression
+    description: Freeze timer
     usage: /<command>
     permission: op
+  givetime:
+    description: Adjust players time
+    usage: /<command> <player> <type> <amount>
+    permission: op
   settime:
-    description: Manually set amount of time for a player
+    description: Set players time in seconds
     usage: /<command> <player> <seconds>
     permission: op
   unfreeze:
-    description: Start time progression
+    description: Unfreeze timer
     usage: /<command>
     permission: op
-  giveminutes:
-    description: Give some of your time left to someone else
-    usage: /<command> <player> <minutes>
-  time:
-    description: See how long you have left
-    usage: /<command>

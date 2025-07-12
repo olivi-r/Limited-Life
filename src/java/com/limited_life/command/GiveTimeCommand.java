@@ -13,10 +13,10 @@ import org.bukkit.entity.Player;
 
 import com.limited_life.Main;
 
-public class SetTimeCommand implements CommandExecutor, TabCompleter {
+public class GiveTimeCommand implements CommandExecutor, TabCompleter {
 	Main plugin;
 
-	public SetTimeCommand(Main plugin) {
+	public GiveTimeCommand(Main plugin) {
 		this.plugin = plugin;
 	}
 
@@ -25,32 +25,48 @@ public class SetTimeCommand implements CommandExecutor, TabCompleter {
 		if (args.length == 1)
 			return null;
 
+		else if (args.length == 2) {
+			List<String> options = new ArrayList<>();
+			options.add("hours");
+			options.add("minutes");
+			options.add("seconds");
+			return options;
+		}
+
 		return new ArrayList<>();
 	}
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		// validate command syntax
-		if (args.length != 2)
+//		validate command syntax
+		if (args.length != 3)
 			return false;
 
-		Integer time;
+		int amount;
 		try {
-			time = Integer.parseInt(args[1]);
+			amount = Integer.parseInt(args[2]);
 		} catch (NumberFormatException err) {
 			return false;
 		}
 
-		// validate command semantics
-		Player player = Bukkit.getPlayerExact(args[0]);
-		if (player == null) {
-			sender.sendMessage(ChatColor.RED + "The target must be a player");
+		String type = args[1];
+		if (type.equals("hours"))
+			amount *= 3600;
+
+		else if (type.equals("minutes"))
+			amount *= 60;
+
+//		validate command semantics
+		Player receiver = Bukkit.getPlayerExact(args[0]);
+		if (receiver == null) {
+			sender.sendMessage(ChatColor.RED + "No player was found");
 			return true;
 		}
 
+//		give time to reveiver
 		boolean frozen = plugin.isFrozen();
 		plugin.freeze();
-		plugin.setTime(player, time);
+		plugin.setTime(receiver, plugin.getTime(receiver) + amount);
 		if (!frozen)
 			plugin.unfreeze();
 
