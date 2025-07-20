@@ -10,11 +10,11 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scoreboard.Scoreboard;
@@ -23,6 +23,9 @@ import org.bukkit.scoreboard.Team;
 
 import com.limited_life.command.FreezeCommand;
 import com.limited_life.command.GiveTimeCommand;
+import com.limited_life.command.ResetAllTimesCommand;
+import com.limited_life.command.SetDefaultTimeCommand;
+import com.limited_life.command.GetDefaultTimeCommand;
 import com.limited_life.command.SetTimeCommand;
 import com.limited_life.command.UnfreezeCommand;
 
@@ -34,7 +37,9 @@ import net.querz.nbt.tag.CompoundTag;
 import net.querz.nbt.tag.IntTag;
 
 public class Main extends JavaPlugin implements Listener {
-	NamespacedKey timeKey;
+	World world;
+	public NamespacedKey timeKey;
+	NamespacedKey defaultTimeKey;
 	Thread timerThread;
 	Team darkGreenTeam;
 	Team greenTeam;
@@ -52,8 +57,14 @@ public class Main extends JavaPlugin implements Listener {
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(this, this);
 
-		// player timer
+		world = Bukkit.getWorlds().get(0);
+
+		// data keys
 		timeKey = new NamespacedKey(this, "time");
+		defaultTimeKey = new NamespacedKey(this, "defaultTime");
+
+		// freshen
+		getDefaultTime();
 
 		// setup commands
 		GiveTimeCommand giveMinutesCommand = new GiveTimeCommand(this);
@@ -71,6 +82,18 @@ public class Main extends JavaPlugin implements Listener {
 		SetTimeCommand setTimeCommand = new SetTimeCommand(this);
 		getCommand("settime").setExecutor(setTimeCommand);
 		getCommand("settime").setTabCompleter(setTimeCommand);
+
+		GetDefaultTimeCommand getDefaultTimeCommand = new GetDefaultTimeCommand(this);
+		getCommand("getdefaulttime").setExecutor(getDefaultTimeCommand);
+		getCommand("getdefaulttime").setTabCompleter(getDefaultTimeCommand);
+
+		SetDefaultTimeCommand setDefaultTimeCommand = new SetDefaultTimeCommand(this);
+		getCommand("setdefaulttime").setExecutor(setDefaultTimeCommand);
+		getCommand("setdefaulttime").setTabCompleter(setDefaultTimeCommand);
+
+		ResetAllTimesCommand resetAllTimesCommand = new ResetAllTimesCommand(this);
+		getCommand("resetalltimes").setExecutor(resetAllTimesCommand);
+		getCommand("resetalltimes").setTabCompleter(resetAllTimesCommand);
 
 		// setup teams
 		ScoreboardManager manager = Bukkit.getScoreboardManager();
@@ -130,20 +153,25 @@ public class Main extends JavaPlugin implements Listener {
 		setTime(player, getTime(player) - 3600);
 	}
 
-	@EventHandler
-	public void onPlayerJoin(PlayerJoinEvent event) {
-//		set time to 24hrs for new players
-		Player player = event.getPlayer();
-		if (!player.hasPlayedBefore()) {
-			setTime(player, 86400);
+	public int getDefaultTime() {
+		Integer defaultTime = world.getPersistentDataContainer().get(defaultTimeKey, PersistentDataType.INTEGER);
+		if (defaultTime == null) {
+			defaultTime = startTime;
+			setDefaultTime(startTime);
 		}
+
+		return Integer.max(0, defaultTime);
+	}
+
+	public void setDefaultTime(int value) {
+		world.getPersistentDataContainer().set(defaultTimeKey, PersistentDataType.INTEGER, Integer.max(0, value));
 	}
 
 	public int getTime(Player player) {
 		Integer time = player.getPersistentDataContainer().get(timeKey, PersistentDataType.INTEGER);
 		if (time == null) {
-			setTime(player, startTime);
-			return startTime;
+			time = getDefaultTime();
+			setTime(player, time);
 		}
 
 		return Integer.max(0, time);
@@ -171,6 +199,7 @@ public class Main extends JavaPlugin implements Listener {
 					while (true) {
 						try {
 							Thread.sleep(1000);
+							setDefaultTime(getDefaultTime() - 2);
 							for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
 								Player onlinePlayer = offlinePlayer.getPlayer();
 								if (onlinePlayer != null) {

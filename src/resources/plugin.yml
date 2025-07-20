@@ -2,7 +2,7 @@ name: LimitedLife
 main: com.limited_life.Main
 version: 1.0
 api-version: 1.21.8
-authors: [Olivia, Dylan]
+author: Olivia
 commands:
   freeze:
     description: Freeze timer
@@ -18,5 +18,17 @@ commands:
     permission: op
   unfreeze:
     description: Unfreeze timer
+    usage: /<command>
+    permission: op
+  getdefaulttime:
+    description: Get default remaining time
+    usaage: /<command>
+    permission: op
+  setdefaulttime:
+    description: Set default remaining time
+    usage: /<command> <seconds>
+    permission: op
+  resetalltimes:
+    description: Reset all players time to default remaining time
     usage: /<command>
     permission: op
