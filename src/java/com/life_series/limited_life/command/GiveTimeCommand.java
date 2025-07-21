@@ -1,4 +1,4 @@
-package com.limited_life.command;
+package com.life_series.limited_life.command;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +11,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-import com.limited_life.Main;
+import com.life_series.limited_life.Main;
 
 public class GiveTimeCommand implements CommandExecutor, TabCompleter {
 	Main plugin;

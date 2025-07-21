@@ -1,4 +1,4 @@
-package com.limited_life.command;
+package com.life_series.limited_life.command;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,7 +15,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-import com.limited_life.Main;
+import com.life_series.limited_life.Main;
 
 import net.querz.nbt.io.NBTUtil;
 import net.querz.nbt.io.NamedTag;

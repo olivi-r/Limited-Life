@@ -1,5 +1,5 @@
 name: LimitedLife
-main: com.limited_life.Main
+main: com.life_series.limited_life.Main
 version: 1.0
 api-version: 1.21.8
 author: Olivia

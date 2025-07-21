@@ -1,4 +1,4 @@
-package com.limited_life;
+package com.life_series.limited_life;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,13 +21,13 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
-import com.limited_life.command.FreezeCommand;
-import com.limited_life.command.GiveTimeCommand;
-import com.limited_life.command.ResetAllTimesCommand;
-import com.limited_life.command.SetDefaultTimeCommand;
-import com.limited_life.command.GetDefaultTimeCommand;
-import com.limited_life.command.SetTimeCommand;
-import com.limited_life.command.UnfreezeCommand;
+import com.life_series.limited_life.command.FreezeCommand;
+import com.life_series.limited_life.command.GetDefaultTimeCommand;
+import com.life_series.limited_life.command.GiveTimeCommand;
+import com.life_series.limited_life.command.ResetAllTimesCommand;
+import com.life_series.limited_life.command.SetDefaultTimeCommand;
+import com.life_series.limited_life.command.SetTimeCommand;
+import com.life_series.limited_life.command.UnfreezeCommand;
 
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;

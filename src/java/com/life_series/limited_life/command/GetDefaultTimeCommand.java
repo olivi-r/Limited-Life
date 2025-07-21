@@ -1,4 +1,4 @@
-package com.limited_life.command;
+package com.life_series.limited_life.command;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,7 +8,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 
-import com.limited_life.Main;
+import com.life_series.limited_life.Main;
 
 public class GetDefaultTimeCommand implements CommandExecutor, TabCompleter {
 	Main plugin;
