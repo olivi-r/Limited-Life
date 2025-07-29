@@ -46,7 +46,7 @@ public class BoogeymanMain extends JavaPlugin {
 		getCommand("boogeyman-cure").setTabCompleter(boogeymanCureCommand);
 	}
 
-	List<UUID> getBoogeymen() {
+	public List<UUID> getBoogeymen() {
 		List<UUID> boogeymen = dataContainer.get(boogeymenKey, UUIDList);
 		if (boogeymen == null) {
 			boogeymen = new ArrayList<>();
@@ -56,7 +56,7 @@ public class BoogeymanMain extends JavaPlugin {
 		return boogeymen;
 	}
 
-	void cure(UUID boogeymanPlayerId) {
+	public void cure(UUID boogeymanPlayerId) {
 		OfflinePlayer player = Bukkit.getOfflinePlayer(boogeymanPlayerId);
 		List<UUID> updatedBoogeymen = getBoogeymen();
 		updatedBoogeymen.remove(boogeymanPlayerId);
@@ -65,7 +65,7 @@ public class BoogeymanMain extends JavaPlugin {
 			handler.boogeySucceed(player);
 	}
 
-	void setBoogeymen(List<UUID> boogeymen) {
+	public void setBoogeymen(List<UUID> boogeymen) {
 		dataContainer.set(boogeymenKey, UUIDList, boogeymen);
 	}
 

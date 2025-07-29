@@ -3,6 +3,8 @@ package com.life_series.limited_life;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
@@ -32,20 +34,22 @@ import net.querz.nbt.tag.CompoundTag;
 import net.querz.nbt.tag.IntTag;
 
 public class Main extends JavaPlugin implements BoogeymanHandler, Listener {
+	Path playerdata;
 	World world;
 	NamespacedKey timeKey;
 	NamespacedKey defaultTimeKey;
+	NamespacedKey lastDeathTimeKey;
 	Thread timerThread;
 	Team darkGreenTeam;
 	Team greenTeam;
 	Team yellowTeam;
 	Team redTeam;
 	Team blackTeam;
-	static int startTime = 86400; // 24h
-	static int greenTime = 64800; // 18h
-	static int yellowTime = 43200; // 12h
-	static int redTime = 21600; // 6h
-	static int killProtectionTime = 30; // 30s
+	static final int startTime = 86400; // 24h
+	static final int greenTime = 64800; // 18h
+	static final int yellowTime = 43200; // 12h
+	static final int redTime = 21600; // 6h
+	static final int killProtectionTime = 30; // 30s
 	boolean frozen;
 
 	@Override
@@ -59,9 +63,10 @@ public class Main extends JavaPlugin implements BoogeymanHandler, Listener {
 	@Override
 	public void boogeyFail(OfflinePlayer boogeyman) {
 		Player onlinePlayer = boogeyman.getPlayer();
+		setTime(boogeyman, getTime(boogeyman) - 21600);
 		if (onlinePlayer != null)
-			onlinePlayer.sendTitle(ChatColor.RED + "You failed the task", ChatColor.RED + "You ran out of time to kill",
-					10, 70, 20);
+			onlinePlayer.sendTitle(ChatColor.RED + "You failed the task", ChatColor.RED + "Ran out of time to kill", 10,
+					70, 20);
 	}
 
 	@Override
@@ -70,10 +75,12 @@ public class Main extends JavaPlugin implements BoogeymanHandler, Listener {
 		BoogeymanMain.setHandler(this);
 
 		world = Bukkit.getWorlds().get(0);
+		playerdata = Bukkit.getWorlds().getFirst().getWorldFolder().toPath().resolve("playerdata");
 
 		// data keys
 		timeKey = new NamespacedKey(this, "time");
 		defaultTimeKey = new NamespacedKey(this, "defaultTime");
+		lastDeathTimeKey = new NamespacedKey(this, "lastDeath");
 
 		// freshen
 		getDefaultTime();
@@ -161,8 +168,41 @@ public class Main extends JavaPlugin implements BoogeymanHandler, Listener {
 	@EventHandler
 	public void onPlayerDeath(PlayerDeathEvent event) {
 		Player player = event.getEntity();
-//		take hour of total time
-		setTime(player, getTime(player) - 3600);
+		Player killer = player.getKiller();
+		int playerTime = getTime(player);
+
+		LocalDateTime lastDeath = getLastDeath(player);
+		LocalDateTime now = LocalDateTime.now();
+		if (frozen || ChronoUnit.SECONDS.between(lastDeath, now) < 60) {
+			updateLastDeath(player);
+			return;
+		}
+
+		if (killer != null) {
+			UUID playerId = player.getUniqueId();
+			UUID killerId = killer.getUniqueId();
+			if (!playerId.equals(killerId)) {
+				BoogeymanMain boogeymanPlugin = (BoogeymanMain) Bukkit.getPluginManager().getPlugin("Boogeyman");
+				boogeymanPlugin.getBoogeymen().forEach(uuid -> {
+					if (killerId.equals(uuid))
+						boogeymanPlugin.cure(killerId);
+				});
+
+				int killerTime = getTime(killer);
+				if (killerTime <= redTime)
+					setTime(killer, killerTime + 2700); // +45m
+
+				else if (killerTime <= yellowTime && playerTime > yellowTime)
+					setTime(killer, killerTime + 1800); // +30m
+
+				else if (killerTime <= greenTime && playerTime > greenTime)
+					setTime(killer, killerTime + 900); // +15m
+			}
+		}
+
+		// take hour of total time
+		setTime(player, playerTime - 3600);
+		updateLastDeath(player);
 	}
 
 	int getDefaultTime() {
@@ -179,8 +219,36 @@ public class Main extends JavaPlugin implements BoogeymanHandler, Listener {
 		world.getPersistentDataContainer().set(defaultTimeKey, PersistentDataType.INTEGER, Integer.max(0, value));
 	}
 
-	int getTime(Player player) {
-		Integer time = player.getPersistentDataContainer().get(timeKey, PersistentDataType.INTEGER);
+	void updateLastDeath(Player player) {
+		player.getPersistentDataContainer().set(lastDeathTimeKey, PersistentDataType.STRING,
+				LocalDateTime.now().toString());
+	}
+
+	LocalDateTime getLastDeath(Player player) {
+		String lastDeath = player.getPersistentDataContainer().get(lastDeathTimeKey, PersistentDataType.STRING);
+		if (lastDeath == null)
+			return LocalDateTime.MIN;
+
+		return LocalDateTime.parse(lastDeath);
+	}
+
+	int getTime(OfflinePlayer player) {
+		Player onlinePlayer = player.getPlayer();
+		Integer time = null;
+		if (onlinePlayer != null)
+			time = onlinePlayer.getPersistentDataContainer().get(timeKey, PersistentDataType.INTEGER);
+		else
+			try {
+				UUID playerId = player.getUniqueId();
+				File playerDataFile = playerdata.resolve(String.join("", playerId.toString(), ".dat")).toFile();
+				NamedTag nbtData = NBTUtil.read(playerDataFile);
+				CompoundTag bukkitValues = ((CompoundTag) nbtData.getTag()).getCompoundTag("BukkitValues");
+				IntTag timeTag = bukkitValues.getIntTag(timeKey.toString());
+				time = timeTag.asInt();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
 		if (time == null) {
 			time = getDefaultTime();
 			setTime(player, time);
@@ -189,8 +257,22 @@ public class Main extends JavaPlugin implements BoogeymanHandler, Listener {
 		return Integer.max(0, time);
 	}
 
-	void setTime(Player player, int value) {
-		player.getPersistentDataContainer().set(timeKey, PersistentDataType.INTEGER, Integer.max(0, value));
+	void setTime(OfflinePlayer player, int value) {
+		Player onlinePlayer = player.getPlayer();
+		if (onlinePlayer != null)
+			onlinePlayer.getPersistentDataContainer().set(timeKey, PersistentDataType.INTEGER, Integer.max(0, value));
+		else
+			try {
+				UUID playerId = player.getUniqueId();
+				File playerDataFile = playerdata.resolve(String.join("", playerId.toString(), ".dat")).toFile();
+				NamedTag nbtData = NBTUtil.read(playerDataFile);
+				CompoundTag bukkitValues = ((CompoundTag) nbtData.getTag()).getCompoundTag("BukkitValues");
+				IntTag timeTag = bukkitValues.getIntTag(timeKey.toString());
+				timeTag.setValue(Integer.max(0, value));
+				NBTUtil.write(nbtData, playerDataFile);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 	}
 
 	String formatTime(int time) {
@@ -203,38 +285,18 @@ public class Main extends JavaPlugin implements BoogeymanHandler, Listener {
 	}
 
 	void unfreeze() {
-		Path playerdata = Bukkit.getWorlds().getFirst().getWorldFolder().toPath().resolve("playerdata");
 		freeze();
 		timerThread = new Thread(new Runnable() {
 			public void run() {
 				try {
 					while (true) {
-						try {
-							Thread.sleep(1000);
-							setDefaultTime(getDefaultTime() - 2);
-							for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
-								Player onlinePlayer = offlinePlayer.getPlayer();
-								if (onlinePlayer != null) {
-									setTime(onlinePlayer, getTime(onlinePlayer) - 1);
-								} else {
-									// OfflinePlayer doesn't load PersistantDataContainer
-									// need write directly to <player uuid>.dat nbt file
-									UUID id = offlinePlayer.getUniqueId();
-									File playerDataFile = playerdata.resolve(String.join("", id.toString(), ".dat"))
-											.toFile();
-									NamedTag nbtData = NBTUtil.read(playerDataFile);
-									CompoundTag bukkitValues = ((CompoundTag) nbtData.getTag())
-											.getCompoundTag("BukkitValues");
-									IntTag timeTag = bukkitValues.getIntTag(timeKey.toString());
-
-									// Offline players lose time twice as fast
-									timeTag.setValue(Integer.max(0, timeTag.asInt() - 2));
-									NBTUtil.write(nbtData, playerDataFile);
-								}
-							}
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
+						Thread.sleep(1000);
+						setDefaultTime(getDefaultTime() - 2);
+						for (OfflinePlayer player : Bukkit.getOfflinePlayers())
+							if (player.isOnline())
+								setTime(player, getTime(player) - 1);
+							else
+								setTime(player, getTime(player) - 2);
 					}
 				} catch (InterruptedException err) {
 					Thread.currentThread().interrupt();
