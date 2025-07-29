@@ -2,6 +2,7 @@ package com.life_series.boogeyman;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
@@ -13,10 +14,10 @@ import org.bukkit.entity.Player;
 
 import net.md_5.bungee.api.ChatColor;
 
-class BoogeymanCommand implements CommandExecutor, TabCompleter {
-	Main plugin;
+class BoogeymanStartCommand implements CommandExecutor, TabCompleter {
+	BoogeymanMain plugin;
 
-	BoogeymanCommand(Main plugin) {
+	BoogeymanStartCommand(BoogeymanMain plugin) {
 		this.plugin = plugin;
 	}
 
@@ -37,25 +38,34 @@ class BoogeymanCommand implements CommandExecutor, TabCompleter {
 			} catch (NumberFormatException err) {
 			}
 
-		List<String> names = new ArrayList<>();
-		Bukkit.getOnlinePlayers().forEach(player -> names.add(player.getName()));
+		List<UUID> nonBoogeymen = new ArrayList<>();
+		Bukkit.getOnlinePlayers().forEach(player -> nonBoogeymen.add(player.getUniqueId()));
 
-		plugin.boogeys.clear();
-		if (count > names.size()) {
+		if (count > nonBoogeymen.size()) {
 			sender.sendMessage(ChatColor.RED + "Not enough players remaining");
 			return true;
 		}
 
+		List<UUID> boogeymen = new ArrayList<>();
 		for (int i = 0; i < count; i++) {
-			int index = ThreadLocalRandom.current().nextInt(names.size());
-			plugin.boogeys.add(names.remove(index));
+			int index = ThreadLocalRandom.current().nextInt(nonBoogeymen.size());
+			boogeymen.add(nonBoogeymen.remove(index));
 		}
 
-		plugin.boogeys.forEach(name -> {
-			Player player = Bukkit.getPlayerExact(name);
-			player.sendMessage("boogey");
+		nonBoogeymen.forEach(uuid -> {
+			Player player = Bukkit.getPlayer(uuid);
+			if (player != null)
+				player.sendTitle(ChatColor.YELLOW + "You are not the boogeyman", "", 10, 70, 20);
 		});
 
+		boogeymen.forEach(uuid -> {
+			Player player = Bukkit.getPlayer(uuid);
+			if (player != null)
+				player.sendTitle(ChatColor.RED + "You are the boogeyman",
+						ChatColor.RED + "Kill another player before the end of the session", 10, 70, 20);
+		});
+
+		plugin.setBoogeymen(boogeymen);
 		return true;
 	}
 

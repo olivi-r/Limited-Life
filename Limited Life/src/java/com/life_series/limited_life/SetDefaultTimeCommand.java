@@ -1,4 +1,4 @@
-package com.life_series.limited_life.command;
+package com.life_series.limited_life;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -8,12 +8,10 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 
-import com.life_series.limited_life.Main;
-
-public class SetDefaultTimeCommand implements CommandExecutor, TabCompleter {
+class SetDefaultTimeCommand implements CommandExecutor, TabCompleter {
 	Main plugin;
 
-	public SetDefaultTimeCommand(Main plugin) {
+	SetDefaultTimeCommand(Main plugin) {
 		this.plugin = plugin;
 	}
 

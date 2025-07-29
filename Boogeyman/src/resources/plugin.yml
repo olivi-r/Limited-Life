@@ -1,10 +1,22 @@
 name: Boogeyman
-main: com.life_series.boogeyman.Main
+main: com.life_series.boogeyman.BoogeymanMain
 version: 1.0
 api-version: 1.21.8
 author: Olivia
 commands:
-  boogeyman:
+  boogeyman-start:
     description: Roll boogeyman
     usage: /<command>
+    permission: op
+  boogeyman-list:
+    description: List current boogeymen
+    usage: /<command>
+    permission: op
+  boogeyman-end:
+    description: End boogeyman time and fail any remaining boogeymen
+    usage: /<command>
+    permission: op
+  boogeyman-cure:
+    description: Manually cure boogeyman
+    usage: /<command> <player>
     permission: op

@@ -21,13 +21,8 @@ import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
 
-import com.life_series.limited_life.command.FreezeCommand;
-import com.life_series.limited_life.command.GetDefaultTimeCommand;
-import com.life_series.limited_life.command.GiveTimeCommand;
-import com.life_series.limited_life.command.ResetAllTimesCommand;
-import com.life_series.limited_life.command.SetDefaultTimeCommand;
-import com.life_series.limited_life.command.SetTimeCommand;
-import com.life_series.limited_life.command.UnfreezeCommand;
+import com.life_series.boogeyman.BoogeymanHandler;
+import com.life_series.boogeyman.BoogeymanMain;
 
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -36,9 +31,9 @@ import net.querz.nbt.io.NamedTag;
 import net.querz.nbt.tag.CompoundTag;
 import net.querz.nbt.tag.IntTag;
 
-public class Main extends JavaPlugin implements Listener {
+public class Main extends JavaPlugin implements BoogeymanHandler, Listener {
 	World world;
-	public NamespacedKey timeKey;
+	NamespacedKey timeKey;
 	NamespacedKey defaultTimeKey;
 	Thread timerThread;
 	Team darkGreenTeam;
@@ -54,8 +49,25 @@ public class Main extends JavaPlugin implements Listener {
 	boolean frozen;
 
 	@Override
+	public void boogeySucceed(OfflinePlayer boogeyman) {
+		Player onlinePlayer = boogeyman.getPlayer();
+		if (onlinePlayer != null)
+			onlinePlayer.sendTitle(ChatColor.GREEN + "You are cured", ChatColor.GREEN + "No longer the boogeyman", 10,
+					70, 20);
+	}
+
+	@Override
+	public void boogeyFail(OfflinePlayer boogeyman) {
+		Player onlinePlayer = boogeyman.getPlayer();
+		if (onlinePlayer != null)
+			onlinePlayer.sendTitle(ChatColor.RED + "You failed the task", ChatColor.RED + "You ran out of time to kill",
+					10, 70, 20);
+	}
+
+	@Override
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(this, this);
+		BoogeymanMain.setHandler(this);
 
 		world = Bukkit.getWorlds().get(0);
 
@@ -153,7 +165,7 @@ public class Main extends JavaPlugin implements Listener {
 		setTime(player, getTime(player) - 3600);
 	}
 
-	public int getDefaultTime() {
+	int getDefaultTime() {
 		Integer defaultTime = world.getPersistentDataContainer().get(defaultTimeKey, PersistentDataType.INTEGER);
 		if (defaultTime == null) {
 			defaultTime = startTime;
@@ -163,11 +175,11 @@ public class Main extends JavaPlugin implements Listener {
 		return Integer.max(0, defaultTime);
 	}
 
-	public void setDefaultTime(int value) {
+	void setDefaultTime(int value) {
 		world.getPersistentDataContainer().set(defaultTimeKey, PersistentDataType.INTEGER, Integer.max(0, value));
 	}
 
-	public int getTime(Player player) {
+	int getTime(Player player) {
 		Integer time = player.getPersistentDataContainer().get(timeKey, PersistentDataType.INTEGER);
 		if (time == null) {
 			time = getDefaultTime();
@@ -177,11 +189,11 @@ public class Main extends JavaPlugin implements Listener {
 		return Integer.max(0, time);
 	}
 
-	public void setTime(Player player, int value) {
+	void setTime(Player player, int value) {
 		player.getPersistentDataContainer().set(timeKey, PersistentDataType.INTEGER, Integer.max(0, value));
 	}
 
-	public String formatTime(int time) {
+	String formatTime(int time) {
 		time = Integer.max(0, time);
 		int seconds = time % 60;
 		time /= 60;
@@ -190,7 +202,7 @@ public class Main extends JavaPlugin implements Listener {
 		return String.format("%02d:%02d:%02d", time, minutes, seconds);
 	}
 
-	public void unfreeze() {
+	void unfreeze() {
 		Path playerdata = Bukkit.getWorlds().getFirst().getWorldFolder().toPath().resolve("playerdata");
 		freeze();
 		timerThread = new Thread(new Runnable() {
@@ -233,14 +245,14 @@ public class Main extends JavaPlugin implements Listener {
 		frozen = false;
 	}
 
-	public void freeze() {
+	void freeze() {
 		if (timerThread != null)
 			timerThread.interrupt();
 
 		frozen = true;
 	}
 
-	public boolean isFrozen() {
+	boolean isFrozen() {
 		return frozen;
 	}
 

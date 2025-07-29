@@ -1,4 +1,4 @@
-package com.life_series.limited_life.command;
+package com.life_series.limited_life;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,17 +15,15 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-import com.life_series.limited_life.Main;
-
 import net.querz.nbt.io.NBTUtil;
 import net.querz.nbt.io.NamedTag;
 import net.querz.nbt.tag.CompoundTag;
 import net.querz.nbt.tag.IntTag;
 
-public class ResetAllTimesCommand implements CommandExecutor, TabCompleter {
+class ResetAllTimesCommand implements CommandExecutor, TabCompleter {
 	Main plugin;
 
-	public ResetAllTimesCommand(Main plugin) {
+	ResetAllTimesCommand(Main plugin) {
 		this.plugin = plugin;
 	}
 

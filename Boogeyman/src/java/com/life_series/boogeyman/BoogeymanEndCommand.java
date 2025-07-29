@@ -1,19 +1,18 @@
-package com.life_series.limited_life.command;
+package com.life_series.boogeyman;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 
-import com.life_series.limited_life.Main;
+class BoogeymanEndCommand implements CommandExecutor, TabCompleter {
+	BoogeymanMain plugin;
 
-public class UnfreezeCommand implements CommandExecutor, TabCompleter {
-	Main plugin;
-
-	public UnfreezeCommand(Main plugin) {
+	BoogeymanEndCommand(BoogeymanMain plugin) {
 		this.plugin = plugin;
 	}
 
@@ -24,7 +23,8 @@ public class UnfreezeCommand implements CommandExecutor, TabCompleter {
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-		plugin.unfreeze();
+		plugin.getBoogeymen().forEach(uuid -> BoogeymanMain.getHandler().boogeyFail(Bukkit.getOfflinePlayer(uuid)));
+		plugin.setBoogeymen(new ArrayList<>());
 		return true;
 	}
 
