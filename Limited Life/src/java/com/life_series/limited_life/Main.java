@@ -155,7 +155,7 @@ public class Main extends JavaPlugin implements BoogeymanHandler, Listener {
 						for (Player player : Bukkit.getOnlinePlayers()) {
 							refresh(player);
 						}
-						Thread.sleep(10);
+						Thread.sleep(1000);
 					}
 				} catch (InterruptedException err) {
 					Thread.currentThread().interrupt();
