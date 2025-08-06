@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -52,20 +53,76 @@ class BoogeymanStartCommand implements CommandExecutor, TabCompleter {
 			boogeymen.add(nonBoogeymen.remove(index));
 		}
 
-		nonBoogeymen.forEach(uuid -> {
-			Player player = Bukkit.getPlayer(uuid);
-			if (player != null)
-				player.sendTitle(ChatColor.YELLOW + "You are not the boogeyman", "", 10, 70, 20);
-		});
+		new Thread(new Runnable() {
+			public void run() {
+				Bukkit.broadcastMessage(ChatColor.DARK_RED + "The Boogeymen are about to be chosen");
+				try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 
-		boogeymen.forEach(uuid -> {
-			Player player = Bukkit.getPlayer(uuid);
-			if (player != null)
-				player.sendTitle(ChatColor.RED + "You are the boogeyman",
-						ChatColor.RED + "Kill another player before the end of the session", 10, 70, 20);
-		});
+				Bukkit.getOnlinePlayers().forEach(player -> {
+					player.sendTitle(ChatColor.GREEN + "3", "", 10, 70, 20);
+					player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 10, 1);
+				});
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 
-		plugin.setBoogeymen(boogeymen);
+				Bukkit.getOnlinePlayers().forEach(player -> {
+					player.sendTitle(ChatColor.YELLOW + "2", "", 10, 70, 20);
+					player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 10, 1);
+				});
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				Bukkit.getOnlinePlayers().forEach(player -> {
+					player.sendTitle(ChatColor.RED + "1", "", 10, 70, 20);
+					player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 10, 1);
+				});
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				Bukkit.getOnlinePlayers()
+						.forEach(player -> player.sendTitle(ChatColor.GOLD + "You are...", "", 10, 70, 20));
+
+				try {
+					Thread.sleep(2000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+
+				nonBoogeymen.forEach(uuid -> {
+					Player player = Bukkit.getPlayer(uuid);
+					if (player != null) {
+						player.sendTitle(ChatColor.GREEN + "NOT the Boogeyman.", "", 10, 70, 20);
+						player.sendMessage(ChatColor.GREEN + "You are not the Boogeyman.");
+						player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 10, 1);
+					}
+				});
+
+				boogeymen.forEach(uuid -> {
+					Player player = Bukkit.getPlayer(uuid);
+					if (player != null) {
+						player.sendTitle(ChatColor.RED + "The Boogeyman.", "", 10, 70, 20);
+						player.sendMessage(ChatColor.RED
+								+ "You are the Boogeyman. Kill another player before the end of the session.");
+						player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 10, 1);
+					}
+				});
+
+				plugin.setBoogeymen(boogeymen);
+			}
+		}).start();
 		return true;
 	}
 
